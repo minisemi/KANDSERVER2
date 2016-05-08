@@ -74,11 +74,7 @@ public class Processor {
                 handleContacts();
             } else if (activity.equalsIgnoreCase("file")){
                 handleFile();
-            } else if (activity.equalsIgnoreCase("vote")) {
-                handelVote();
-            } else if (activity.equalsIgnoreCase("receive")) {
-                handelReceive();
-            }else {
+            } else {
                 System.out.println("ERROR! Wrong activity asked in processor");
             }
         } else {
@@ -122,14 +118,6 @@ public class Processor {
             sqle.printStackTrace();
         }
         return active;
-    }
-
-    private void handelVote (){
-
-    }
-
-    private void handelReceive (){
-
     }
 
     private void handlePass() {

@@ -3,7 +3,15 @@ package Main;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import javafx.scene.control.RadioButton;
+import org.apache.commons.io.FileUtils;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.net.Socket;
+import java.security.GeneralSecurityException;
 import java.sql.SQLException;
 import java.util.UUID;
 
@@ -15,14 +23,37 @@ public class Processor {
     private JsonObject receivedObject, data;
     private JsonArray dataArray;
     private String activity, action, id, response;
+    FileEncryption decryptionMix;
+    FileEncryption decryptionReceiver;
+    File in1;
+    File in2;
+    File encrypted1;
+    File encrypted1_1;
+    File encrypted2;
+    File encrypted2_1;
+    File decrypted1;
+    File decrypted1_1;
+    File rsaPublicKeyReceiver;
+    File rsaPublicKeyMix;
+    File encryptedAesKeyReceiver;
+    File rsaPrivateKeyMix;
+    File encryptedAesKeyMix;
+    File rsaPrivateKeyReceiver;
+    FileEncryption encryption;
+    Socket socket;
+    String receiverIP;
+    int receiverPort;
+    VoteReceiver votereceiver;
+    FileUtils fileUtils;
 
     /**
      *
      */
 
-    public Processor(String jsonRequest) {
+    public Processor(String jsonRequest, VoteReceiver voteReceiver) {
         database = new Database();
         response = "";
+        this.votereceiver = voteReceiver;
 
         //Create parser for the request
         JsonParser parser = new JsonParser();
@@ -74,6 +105,10 @@ public class Processor {
                 handleContacts();
             } else if (activity.equalsIgnoreCase("file")){
                 handleFile();
+            } else if (activity.equalsIgnoreCase("vote")){
+                handleVote();
+            } else if (activity.equalsIgnoreCase("receive")){
+                handleReceive();
             } else {
                 System.out.println("ERROR! Wrong activity asked in processor");
             }
@@ -82,6 +117,189 @@ public class Processor {
             response = new Response(false).notActiveResponse();
         }
         return response;
+    }
+
+    private void handleVote (){
+        System.out.println("JSONMESSAGE: "+data.toString());
+        //String encryptedMessage = data.get("message").toString();
+        //String encrypedAesKey = data.get("aeskey").toString();
+        fileUtils = new FileUtils();
+        //String [] parts = jsonMessage.split("\"?,?\"[a-z]*\":\"");
+        //JsonParser parser = new JsonParser();
+        //JsonObject jo = (JsonObject) parser.parse(encryptedMessage);
+        //String activity = parts [1];
+
+
+            encrypted1 = new File("/srvakf/srvakf2/KANDSERVER2/encrypted1.txt");
+            decrypted1 = new File("/srvakf/srvakf2/KANDSERVER2/decrypted1.txt");
+            encryptedAesKeyMix = new File("/srvakf/srvakf2/KANDSERVER2/encryptedAesKeyMix.txt");
+            rsaPrivateKeyMix = new File("/srvakf/srvakf2/KANDSERVER2/privateSender.der");
+            rsaPublicKeyMix = new File("/srvakf/srvakf2/KANDSERVER2/publicSender.der");
+            rsaPublicKeyReceiver = new File("/srvakf/srvakf2/KANDSERVER2/publicReceiver.der");
+            encryptedAesKeyReceiver = new File("/srvakf/srvakf2/KANDSERVER2/encryptedAesKeyReceiver.txt");
+            encrypted1_1 = new File("/srvakf/srvakf2/KANDSERVER2/encrypted1_1.txt");
+            in1 = new File("/srvakf/srvakf2/KANDSERVER2/In1.txt");
+            //String encryptedAesKey = parts [3].replace("\"}","");
+            //System.out.println("AESKEY: "+encryptedAesKey);
+
+            try {
+                encryption = new FileEncryption();
+                encryption.makeKey();
+                encryptMix(encrypted1, encrypted1_1, encryptClient(in1, encrypted1));
+
+               /* BufferedWriter writer = new BufferedWriter(new FileWriter(encryptedAesKeyMix, false ));
+
+            writer.write(encryptedAesKey);
+            writer.close();
+                System.out.println("AESKEY: "+fileUtils.readFileToString(encryptedAesKeyMix));
+            encryption.loadKey(encryptedAesKeyMix, rsaPrivateKeyMix);
+                String encryptedMessage = jo.get("message").toString();
+                //String encryptedMessage = parts [2];
+                System.out.println(encryptedMessage);
+                writer = new BufferedWriter(new FileWriter(encrypted1, false ));
+                writer.write(encryptedMessage);
+                writer.close();
+            encryption.decrypt(encrypted1, decrypted1);
+                jsonMessage = encryption.getJsonString(decrypted1).replace("RANDOM_SALT", "");
+                receiverIP = votereceiver.getReceiverIP();
+                receiverPort = votereceiver.getReceiverPort();
+                System.out.println(jsonMessage);
+                System.out.println(receiverIP);
+                System.out.println(receiverPort);
+                //ClientSender clientSender =
+                //        new ClientSender(mClientInfo, jsonMessage, receiverIP, receiverPort);
+                //clientSender.start();*/
+                String jsonMessage = "hej";
+                response = new Response(true, jsonMessage).buildVoteResponse();
+
+
+
+       // } catch (IOException i){
+         //   i.printStackTrace();
+            } catch (GeneralSecurityException e) {
+                e.printStackTrace();
+            }
+
+    }
+
+    private void handleReceive (){
+        receiverIP = socket.getInetAddress().getHostAddress();
+        receiverPort = socket.getPort();
+        System.out.println(receiverIP);
+        System.out.println(receiverPort);
+        votereceiver.setReceiverIP(receiverIP);
+        votereceiver.setReceiverPort(receiverPort);
+
+
+    }
+
+    public String getAction () {
+        return action;
+    }
+
+    public String encrypt (File in, File out, File rsaPublicKey, File encryptedAesKey) {
+        try {
+
+            String encryptedText1 = fileUtils.readFileToString(in);
+
+
+            encryption.saveKey(encryptedAesKey, rsaPublicKey);
+            encryption.encrypt(in, out);
+
+
+            String encryptedText = fileUtils.readFileToString(out);
+
+            //BufferedReader brM1 = new BufferedReader(new InputStreamReader(new FileInputStream(out)));
+
+
+            return encryptedText;
+        } catch (GeneralSecurityException e){
+            e.printStackTrace();
+        } catch (IOException i){
+            i.printStackTrace();
+        }
+        return null;
+    }
+
+    public void decryptMix (File in, File out){
+        try {
+            String encryptedText1 = fileUtils.readFileToString(in);;
+
+            decryptionMix.loadKey(encryptedAesKeyMix, rsaPrivateKeyMix);
+            decryptionMix.decrypt(in, out);
+
+            String encryptedText = fileUtils.readFileToString(out);;
+
+        } catch (IOException i){
+            i.printStackTrace();
+        } catch (GeneralSecurityException e){
+            e.printStackTrace();
+        }
+    }
+
+    public void decryptReceiver (File in, File out){
+        try {
+            String encryptedText1 = fileUtils.readFileToString(in).replace("RANDOM_SALT","");
+            //JsonParser parser = new JsonParser();
+            //JsonObject jo = (JsonObject)parser.parse(encryptedText1);
+            String [] parts = encryptedText1.split("\"?,?\"[a-z]*\":\"");
+            //String encryptedMessage = jo.get("message").getAsString().toLowerCase();
+            String encryptedMessage = parts[2];
+            String [] encryptedKeyParts = parts [3].split("\"}");
+            //String encryptedKey = jo.get("aeskey").getAsString().toLowerCase();
+            String encryptedKey = parts[3].replace("\"}", "");
+            BufferedWriter writer = new BufferedWriter(new FileWriter(encryptedAesKeyReceiver, false /*append*/));
+            writer.write(encryptedKey);
+            writer.close();
+            decryptionReceiver.loadKey(encryptedAesKeyReceiver, rsaPrivateKeyReceiver);
+            writer = new BufferedWriter(new FileWriter(in, false /*append*/));
+            writer.write(encryptedMessage);
+            writer.close();
+            decryptionReceiver.decrypt(in, out);
+            String encryptedText = fileUtils.readFileToString(out);
+        } catch (IOException i){
+            i.printStackTrace();
+        } catch (GeneralSecurityException e){
+            e.printStackTrace();
+        }
+    }
+
+    public String encryptClient(File vote, File encryptedVote){
+
+        String encryptedText = encrypt(vote, encryptedVote, rsaPublicKeyReceiver, encryptedAesKeyReceiver);
+        String encryptedAesKey = encryption.getEncryptedAesKey(encryptedAesKeyReceiver);
+        //String jsonString = "{\"address\":\"345.2534.64.65\",\"message\":\""+encryptedText+"\",\"aeskey\":\""+encryptedAesKey+"\"}";
+        JsonObject params = new JsonObject();
+        params.addProperty("address", "534.23.5");
+        params.addProperty("message", encryptedText);
+        params.addProperty("aeskey", encryptedAesKey);
+        return params.toString();
+    }
+
+    public String encryptMix (File in, File out, String jsonString) {
+
+        try{
+
+            String encryptedClientText = "RANDOM_SALT" + jsonString;
+            BufferedWriter writer = new BufferedWriter(new FileWriter(in, false /*append*/));
+            writer.write(encryptedClientText);
+            writer.close();
+
+            String encryptedText = encrypt(in, out, rsaPublicKeyMix, encryptedAesKeyMix);
+            String encryptedAesKey = encryption.getEncryptedAesKey(encryptedAesKeyMix);
+            //String jsonStringMix = "{\"activity\":\"vote\",\"message\":\""+encryptedText+"\",\"aeskey\":\""+encryptedAesKey+"\"}";
+
+            JsonObject paramsMix = new JsonObject();
+            paramsMix.addProperty("activity", "vote");
+            paramsMix.addProperty("message", encryptedText);
+            paramsMix.addProperty("aeskey", encryptedAesKey);
+            return paramsMix.toString();
+
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
+        return "";
+
     }
 
     private void handleFile() {
@@ -369,6 +587,13 @@ class Response {
         this.active = active;
         this.access = access;
         this.args = args;
+    }
+
+    public String buildVoteResponse(){
+        response.addProperty("active", active);
+        response.addProperty("message", args[0]);
+        System.out.println("RESPONSE TO CLIENT: "+response.toString());
+        return response.toString();
     }
 
     public String buildNFCResponse(){
