@@ -148,7 +148,7 @@ public class Processor {
             rsaPublicKeyReceiver = new File(path,"publicReceiver.der");
             encryptedAesKeyReceiver = new File(path,"encryptedAesKeyReceiver.txt");
             encrypted1_1 = new File(path,"encrypted1_1.txt");
-            in1 = new File(path,"test.txt");
+            in1 = new File(path,"In1.txt");
             decrypted1_1 = new File(path,"decrypted1_1.txt");
             //String encryptedAesKey = parts [3].replace("\"}","");
             //System.out.println("AESKEY: "+encryptedAesKey);
@@ -171,12 +171,9 @@ public class Processor {
         }
 
         else {
-            try {
-                String k = fileUtils.readFileToString(in1);
-                response = new Response(true, k, "false", startTime, limit, action, count).buildVoteResponse();
-            }catch (IOException j){
-                j.printStackTrace();
-            }
+
+                response = new Response(true, "Alexander rostar pa 2", "false", startTime, limit, action, count).buildVoteResponse();
+
         }
 
     }
