@@ -2,6 +2,7 @@ package Main;
 
 import javax.net.ssl.*;
 import java.io.*;
+import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
@@ -14,10 +15,11 @@ import java.util.logging.Logger;
 public class SSLServer {
 
     public static void main(String[] args) throws Exception {
-        int PORT = 9001;
+        int PORT = 9010;
 
-        SSLServerSocket serverSocket = getConnection(PORT);
-        serverSocket.setNeedClientAuth(true);
+        //SSLServerSocket serverSocket = getConnection(PORT);
+        ServerSocket serverSocket = new ServerSocket(PORT);
+        //serverSocket.setNeedClientAuth(false);
         System.out.println("Server is up!");
         System.out.println("Waiting for client connection at the port: " + PORT);
         VoteReceiver voteReceiver = new VoteReceiver();
@@ -91,26 +93,34 @@ public class SSLServer {
 
                     String clientMessage = in.readLine();
                     while (!clientMessage.isEmpty()){
-                        processor = new Processor(clientMessage, voteReceiver);
-
-                        switch (processor.getAction()) {
-                            case ("receive"):
-                                break;
-
-                            case ("vote"):
+                        System.out.println("RECEIVED MESSAGE: "+clientMessage);
+                        processor = new Processor(clientMessage, voteReceiver, socket);
                         String reply = processor.processMessage();
-                        System.out.println("Reply to client: " + reply);
-                                outSocket = new Socket(voteReceiver.getReceiverIP(), voteReceiver.getReceiverPort());
-                                out = new PrintWriter(new OutputStreamWriter(outSocket.getOutputStream()));
 
-                        out.print(reply);
-                        out.flush();
-                        clientMessage = "";
-                                break;
+                            switch (processor.getAction()) {
+                                case ("receive"):
+                                    break;
 
-                            default:
-                                break;
-                        }
+                                case ("vote"):
+                                    System.out.println("Reply to vote server: " + reply);
+                                    //System.out.println("IP: "+voteReceiver.getReceiverIP()+ ", PORT: "+ voteReceiver.getReceiverPort());
+                                    outSocket = new Socket(voteReceiver.getReceiverIP(), voteReceiver.getReceiverPort());
+                                    out = new PrintWriter(new OutputStreamWriter(outSocket.getOutputStream()));
+                                    /*outSocket = new Socket("2016-4.itkand.ida.liu.se", 9002);
+                                    out = new PrintWriter(new OutputStreamWriter(outSocket.getOutputStream()));*/
+                                    out.print(reply);
+                                    out.flush();
+                                    break;
+
+                                default:
+                                    System.out.println("Reply to client: " + reply);
+                                    out = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()));
+                                    out.print(reply);
+                                    out.flush();
+                                    break;
+                            }
+                            clientMessage = "";
+
                     }
                 } catch (IOException ioe) {
                     ioe.printStackTrace();

@@ -3,7 +3,6 @@ package Main;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import javafx.scene.control.RadioButton;
 import org.apache.commons.io.FileUtils;
 
 import java.io.BufferedWriter;
@@ -22,7 +21,7 @@ public class Processor {
     private Database database;
     private JsonObject receivedObject, data;
     private JsonArray dataArray;
-    private String activity, action, id, response;
+    private String activity, action, id, response, encrypted, startTime, limit, count;
     FileEncryption decryptionMix;
     FileEncryption decryptionReceiver;
     File in1;
@@ -50,10 +49,11 @@ public class Processor {
      *
      */
 
-    public Processor(String jsonRequest, VoteReceiver voteReceiver) {
+    public Processor(String jsonRequest, VoteReceiver voteReceiver, Socket socket) {
         database = new Database();
         response = "";
         this.votereceiver = voteReceiver;
+        this.socket = socket;
 
         //Create parser for the request
         JsonParser parser = new JsonParser();
@@ -62,15 +62,18 @@ public class Processor {
 
         // Assign the request fields of the header
         activity = receivedObject.get("activity").getAsString().toLowerCase();
-        action = receivedObject.get("action").getAsString().toLowerCase();
-        id = receivedObject.get("sessionid").getAsString().toLowerCase();
 
-        // The data field of the request
-        dataArray = (JsonArray) receivedObject.get("data");
-        try {
-            data = (JsonObject) dataArray.get(0);
-        } catch (IndexOutOfBoundsException i) {
-            // Data array is empty
+            action = receivedObject.get("action").getAsString().toLowerCase();
+        if (!activity.equalsIgnoreCase("vote")) {
+            id = receivedObject.get("sessionid").getAsString().toLowerCase();
+
+            // The data field of the request
+            dataArray = (JsonArray) receivedObject.get("data");
+            try {
+                data = (JsonObject) dataArray.get(0);
+            } catch (IndexOutOfBoundsException i) {
+                // Data array is empty
+            }
         }
     }
 
@@ -88,7 +91,8 @@ public class Processor {
         if (activity.equalsIgnoreCase("nfc") || activity.equalsIgnoreCase("pass")) {
             activeSession = true;
         } else {
-            activeSession = checkActiveSession();
+            //activeSession = checkActiveSession();
+            activeSession = true;
         }
 
         if (activeSession) {
@@ -120,71 +124,67 @@ public class Processor {
     }
 
     private void handleVote (){
-        System.out.println("JSONMESSAGE: "+data.toString());
-        //String encryptedMessage = data.get("message").toString();
-        //String encrypedAesKey = data.get("aeskey").toString();
-        fileUtils = new FileUtils();
-        //String [] parts = jsonMessage.split("\"?,?\"[a-z]*\":\"");
-        //JsonParser parser = new JsonParser();
-        //JsonObject jo = (JsonObject) parser.parse(encryptedMessage);
-        //String activity = parts [1];
+        encrypted = receivedObject.get("encrypted").getAsString().toLowerCase();
+        startTime = receivedObject.get("starttime").getAsString().toLowerCase();
+        limit = receivedObject.get("limit").getAsString().toLowerCase();
+        count = receivedObject.get("count").getAsString().toLowerCase();
+        if (encrypted.equalsIgnoreCase("true")){
+
+            //String encryptedMessage = data.get("message").toString();
+            //String encrypedAesKey = data.get("aeskey").toString();
+            fileUtils = new FileUtils();
+            //String [] parts = jsonMessage.split("\"?,?\"[a-z]*\":\"");
+            //JsonParser parser = new JsonParser();
+            //JsonObject jo = (JsonObject) parser.parse(encryptedMessage);
+            //String activity = parts [1];
+            String path = "/srvakf/srvakf2/KANDSERVER2_9/";
 
 
-            encrypted1 = new File("/srvakf/srvakf2/KANDSERVER2/encrypted1.txt");
-            decrypted1 = new File("/srvakf/srvakf2/KANDSERVER2/decrypted1.txt");
-            encryptedAesKeyMix = new File("/srvakf/srvakf2/KANDSERVER2/encryptedAesKeyMix.txt");
-            rsaPrivateKeyMix = new File("/srvakf/srvakf2/KANDSERVER2/privateSender.der");
-            rsaPublicKeyMix = new File("/srvakf/srvakf2/KANDSERVER2/publicSender.der");
-            rsaPublicKeyReceiver = new File("/srvakf/srvakf2/KANDSERVER2/publicReceiver.der");
-            encryptedAesKeyReceiver = new File("/srvakf/srvakf2/KANDSERVER2/encryptedAesKeyReceiver.txt");
-            encrypted1_1 = new File("/srvakf/srvakf2/KANDSERVER2/encrypted1_1.txt");
-            in1 = new File("/srvakf/srvakf2/KANDSERVER2/In1.txt");
+            encrypted1 = new File(path,"encrypted1.txt");
+            decrypted1 = new File(path,"decrypted1.txt");
+            encryptedAesKeyMix = new File(path,"encryptedAesKeyMix.txt");
+            rsaPrivateKeyMix = new File(path,"privateSender.der");
+            rsaPublicKeyMix = new File(path,"publicSender.der");
+            rsaPublicKeyReceiver = new File(path,"publicReceiver.der");
+            encryptedAesKeyReceiver = new File(path,"encryptedAesKeyReceiver.txt");
+            encrypted1_1 = new File(path,"encrypted1_1.txt");
+            in1 = new File(path,"test.txt");
+            decrypted1_1 = new File(path,"decrypted1_1.txt");
             //String encryptedAesKey = parts [3].replace("\"}","");
             //System.out.println("AESKEY: "+encryptedAesKey);
 
             try {
+            decryptionMix = new FileEncryption();
                 encryption = new FileEncryption();
                 encryption.makeKey();
                 encryptMix(encrypted1, encrypted1_1, encryptClient(in1, encrypted1));
+                decryptMix(encrypted1_1, decrypted1_1);
+                String decrypted = fileUtils.readFileToString(decrypted1_1);
+               // System.out.println("DECRYPTED: " + decrypted);
+                response = new Response(true, decrypted, "true", startTime, limit, action, count).buildVoteResponse();
 
-               /* BufferedWriter writer = new BufferedWriter(new FileWriter(encryptedAesKeyMix, false ));
-
-            writer.write(encryptedAesKey);
-            writer.close();
-                System.out.println("AESKEY: "+fileUtils.readFileToString(encryptedAesKeyMix));
-            encryption.loadKey(encryptedAesKeyMix, rsaPrivateKeyMix);
-                String encryptedMessage = jo.get("message").toString();
-                //String encryptedMessage = parts [2];
-                System.out.println(encryptedMessage);
-                writer = new BufferedWriter(new FileWriter(encrypted1, false ));
-                writer.write(encryptedMessage);
-                writer.close();
-            encryption.decrypt(encrypted1, decrypted1);
-                jsonMessage = encryption.getJsonString(decrypted1).replace("RANDOM_SALT", "");
-                receiverIP = votereceiver.getReceiverIP();
-                receiverPort = votereceiver.getReceiverPort();
-                System.out.println(jsonMessage);
-                System.out.println(receiverIP);
-                System.out.println(receiverPort);
-                //ClientSender clientSender =
-                //        new ClientSender(mClientInfo, jsonMessage, receiverIP, receiverPort);
-                //clientSender.start();*/
-                String jsonMessage = "hej";
-                response = new Response(true, jsonMessage).buildVoteResponse();
-
-
-
-       // } catch (IOException i){
-         //   i.printStackTrace();
             } catch (GeneralSecurityException e) {
                 e.printStackTrace();
+            } catch (IOException i) {
+                i.printStackTrace();
             }
+        }
+
+        else {
+            try {
+                String k = fileUtils.readFileToString(in1);
+                response = new Response(true, k, "false", startTime, limit, action, count).buildVoteResponse();
+            }catch (IOException j){
+                j.printStackTrace();
+            }
+        }
 
     }
 
     private void handleReceive (){
+        //receiverIP = data.get("IP").getAsString();
         receiverIP = socket.getInetAddress().getHostAddress();
-        receiverPort = socket.getPort();
+        receiverPort = 8080;
         System.out.println(receiverIP);
         System.out.println(receiverPort);
         votereceiver.setReceiverIP(receiverIP);
@@ -591,8 +591,13 @@ class Response {
 
     public String buildVoteResponse(){
         response.addProperty("active", active);
+        response.addProperty("activity", "vote");
         response.addProperty("message", args[0]);
-        System.out.println("RESPONSE TO CLIENT: "+response.toString());
+        response.addProperty("encrypted", args[1]);
+        response.addProperty("starttime", args[2]);
+        response.addProperty("limit", args[3]);
+        response.addProperty("action", args[4]);
+        response.addProperty("count", args[5]);
         return response.toString();
     }
 
