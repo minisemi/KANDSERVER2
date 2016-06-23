@@ -15,7 +15,7 @@ import java.util.logging.Logger;
 public class SSLServer {
 
     public static void main(String[] args) throws Exception {
-        int PORT = 9010;
+        int PORT = 9003;
 
         //SSLServerSocket serverSocket = getConnection(PORT);
         ServerSocket serverSocket = new ServerSocket(PORT);
@@ -93,7 +93,7 @@ public class SSLServer {
 
                     String clientMessage = in.readLine();
                     while (!clientMessage.isEmpty()){
-                        System.out.println("RECEIVED MESSAGE: "+clientMessage);
+                      //  System.out.println("RECEIVED MESSAGE: "+clientMessage);
                         processor = new Processor(clientMessage, voteReceiver, socket);
                         String reply = processor.processMessage();
 
@@ -102,12 +102,12 @@ public class SSLServer {
                                     break;
 
                                 case ("vote"):
-                                    System.out.println("Reply to vote server: " + reply);
+                                  //  System.out.println("Reply to vote server: " + reply);
                                     //System.out.println("IP: "+voteReceiver.getReceiverIP()+ ", PORT: "+ voteReceiver.getReceiverPort());
-                                    outSocket = new Socket(voteReceiver.getReceiverIP(), voteReceiver.getReceiverPort());
-                                    out = new PrintWriter(new OutputStreamWriter(outSocket.getOutputStream()));
-                                    /*outSocket = new Socket("2016-4.itkand.ida.liu.se", 9002);
+                                    /*outSocket = new Socket(voteReceiver.getReceiverIP(), voteReceiver.getReceiverPort());
                                     out = new PrintWriter(new OutputStreamWriter(outSocket.getOutputStream()));*/
+                                    outSocket = new Socket("2016-4.itkand.ida.liu.se", 9004);
+                                    out = new PrintWriter(new OutputStreamWriter(outSocket.getOutputStream()));
                                     out.print(reply);
                                     out.flush();
                                     break;

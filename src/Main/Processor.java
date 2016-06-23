@@ -137,7 +137,7 @@ public class Processor {
             //JsonParser parser = new JsonParser();
             //JsonObject jo = (JsonObject) parser.parse(encryptedMessage);
             //String activity = parts [1];
-            String path = "/srvakf/srvakf2/KANDSERVER2_9/";
+            String path = "/srvakf/srvakf2/KANDSERVER2_2/";
 
 
             encrypted1 = new File(path,"encrypted1.txt");
@@ -161,7 +161,7 @@ public class Processor {
                 decryptMix(encrypted1_1, decrypted1_1);
                 String decrypted = fileUtils.readFileToString(decrypted1_1);
                // System.out.println("DECRYPTED: " + decrypted);
-                response = new Response(true, decrypted, "true", startTime, limit, action, count).buildVoteResponse();
+                response = new Response(true, "k", "true", startTime, limit, action, count).buildVoteResponse();
 
             } catch (GeneralSecurityException e) {
                 e.printStackTrace();
@@ -171,8 +171,15 @@ public class Processor {
         }
 
         else {
+            try {
+                String path = "/srvakf/srvakf2/KANDSERVER2_2/";
+                in1 = new File(path,"In1.txt");
+                String k = fileUtils.readFileToString(in1);
+                response = new Response(true, k, "false", startTime, limit, action, count).buildVoteResponse();
+            } catch (IOException j){
+                j.printStackTrace();
+            }
 
-                response = new Response(true, "Alexander rostar pa 2", "false", startTime, limit, action, count).buildVoteResponse();
 
         }
 
