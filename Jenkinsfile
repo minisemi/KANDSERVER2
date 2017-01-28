@@ -1,6 +1,6 @@
 node{
 stage('Build') { // <2>
-        echo 'Hello'
+        echo 'Hejsan'
         bat 'make' // <3>
     }
 
