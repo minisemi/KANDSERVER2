@@ -1,1 +1,2 @@
-# TDDD82SERVER
+<h2>Server</h2>
+<p>An onion routing system for decrypting RSA/AES encrypted messages (votes), and performance testing them in comparison to non-encrypted messages. The first server receives the message from an Android app. The servers then decrypt the outmost layer of encryption at the time of receiving a message, and then forward them to the next server in the system until the message reaches a server hosted on an Android app. The report written on the project can be found <a href="http://www.diva-portal.org/smash/record.jsf?pid=diva2%3A1066541&dswid=-7324">here</a>. The app connected to the onion routing system can be found <a href="https://github.com/minisemi/KANDKLIENT2/blob/master/README.md">here</a></p>
